@@ -1,0 +1,351 @@
+--- # Input files, output files, functional forms, parameters values
+
+input_data :
+  climate :
+    columns:
+      USFIPS : "County FIPS"
+      MTH :
+        - "Jan"
+        - "Feb"
+        - "Mar"
+        - "Apr"
+        - "May"
+        - "Jun"
+        - "Jul"
+        - "Aug"
+        - "Sep"
+        - "Oct"
+        - "Nov"
+        - "Dec"
+    BASE :
+      Livneh :
+        temp   : "processed/climate/Baseline/EPA Health_Temp_C_LivnehBaseline_weighted by county FIPS population.csv"
+        precip : "processed/climate/Baseline/EPA Health_Precip_mm_LivnehBaseline_weighted by county FIPS population.csv"
+        year   : 2015
+    D1 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2011_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2011_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2011
+      CCSM4 :
+        temp   : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2011_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2011_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2011
+      GISS_E2_R :
+        temp   : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2025_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2025_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2025
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2013_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2013_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2013
+      MIROC5 :
+        temp   : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2017_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2017_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2017
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2013_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2013_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2013
+    D2 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2033_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2033_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2033
+      CCSM4 :
+        temp   : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2037_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2037_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2037
+      GISS_E2_R :
+        temp   : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2052_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2052_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2052
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2029_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2029_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2029
+      MIROC5 :
+        temp   : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2033_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2033_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2033
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2032_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2032_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2032
+    D3 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2048_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2048_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2048
+      CCSM4 :
+        temp   : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2059_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2059_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2059
+      GISS_E2_R :
+        temp   : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2082_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GISS-E2-R/EPA Health_GISS-E2-R_GCM_2082_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2082
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2044_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2044_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2044
+      MIROC5 :
+        temp   : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2050_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2050_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2050
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2049_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2049_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2049
+    D4 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2062_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2062_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2062
+      CCSM4 :
+        temp   : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2077_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2077_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2077
+      GISS_E2_R :
+        temp   : NA
+        precip : NA
+        year   : NA
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2055_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2055_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2055
+      MIROC5 :
+        temp   : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2067_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2067_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2067
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2061_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2061_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2061
+    D5 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2076_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2076_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2076
+      CCSM4 :
+        temp   : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2091_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CCSM4/EPA Health_CCSM4_GCM_2091_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2091
+      GISS_E2_R :
+        temp   : NA
+        precip : NA
+        year   : NA
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2064_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2064_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2064
+      MIROC5 :
+        temp   : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2081_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/MIROC5/EPA Health_MIROC5_GCM_2081_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2081
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2071_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2071_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2071
+    D6 : 
+      CanESM2 :
+        temp   : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2091_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/CanESM2/EPA Health_CanESM2_GCM_2091_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2091
+      CCSM4 :
+        temp   : NA
+        precip : NA
+        year   : NA
+      GISS_E2_R :
+        temp   : NA
+        precip : NA
+        year   : NA
+      HadGEM2_ES :
+        temp   : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2077_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/HadGEM2-ES/EPA Health_HadGEM2-ES_GCM_2077_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2077
+      MIROC5 :
+        temp   : NA
+        precip : NA
+        year   : NA
+      GFDL_CM3 :
+        temp   : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2087_Temp_C_rcp85_weighted by county FIPS population.csv"
+        precip : "processed/climate/GFDL-CM3/EPA Health_GFDL-CM3_GCM_2087_Precip_mm_rcp85_weighted by county FIPS population.csv"
+        year   : 2087
+
+  demographic :
+    population : 
+      name : "processed/ICLUSv2_InterpCtyPopn_AgeSex_2010-2100.csv"
+      columns :
+        FIPS : "fips"
+        YEAR : "year" 
+        SEX  : "sex" 
+        AGE  : "agegrp"
+        POP  : "sex_age_popn"
+    incidence  : 
+      name : "processed/mo_dist_suicide_rates_1999_2019.csv"
+      columns :
+        ST      : "state_Abbr"
+        FIPS    : "fips"
+        SEX     : "sex" 
+        AGE     : "agegrp"
+        MTH     : "month"
+        IR100K  : "inc_rate_monthly_per100000"
+
+input_workbooks :
+  vsl_income_growth_factors : 
+    name            : "VSL Projections.xlsx"
+    sheet           : "VSL_SeriesCalculation"
+    range           : "C1:I112"
+    year_col_num    : 1
+    incgf_col_num   : 7
+
+convergence :
+  N_start : 50
+  N_inc   : 50
+  rel_tol_fun : "function(x0,x1) { abs(1 - x1/x0) < 0.1 }"
+  conv_quant :
+    LCB : 0.05
+    UCB : 0.95
+  conv_variab :
+    - "AGE"
+    - "SEX"
+    - "ST"
+    - "HIF"
+    - "MODEL"
+
+vsl_information :
+  bls_cpi_factor       : 1.813442999
+  curr_year_report     : 2015
+  curr_year_original   : 1990
+  income_year_original : 1990
+  parameters :
+    refval :
+      scale : 1000000
+      point : 4.8
+      distr : "function(u) qweibull(u,scale=7.75,shape=1.51)"
+    elas :
+      scale : 1
+      point : 0.4
+      distr : "function(u) qtriangle(u,a=0.08,b=1,c=0.4)"
+
+hif_transformations:
+  binned:
+    D_le_30 : "function(x) length( x[ x <= -1.11111 & !is.na(x) ] )"
+    D_30_40 : "function(x) length( x[ x > -1.11111 & x <= 4.44444 & !is.na(x) ] )"
+    D_40_50 : "function(x) length( x[ x > 4.44444 & x <= 10 & !is.na(x) ] )"
+    D_50_60 : "function(x) length( x[ x > 10 & x <= 15.5556 & !is.na(x) ] )"
+    D_70_80 : "function(x) length( x[ x > 21.1111 & x <= 26.6667 & !is.na(x) ] )"
+    D_80_ge : "function(x) length( x[ x > 26.6667 & !is.na(x) ] )"
+  linear:
+    temp   : "function(x) mean(x,na.rm=TRUE)"
+    precip : "function(x) sum(x,na.rm=TRUE)"
+
+hif_parameters:
+  binned:
+    beta_le_30 :
+      scale :  0.01
+      point : -0.59
+      distr : "function(u) qnorm(u,mean = -0.59, sd = 0.07, log = FALSE)"
+    beta_30_40 :
+      scale :  0.01
+      point : -0.27
+      distr : "function(u) qnorm(u,mean = -0.27, sd = 0.07, log = FALSE)"
+    beta_40_50 :
+      scale :  0.01
+      point : -0.21
+      distr : "function(u) qnorm(u,mean = -0.21, sd = 0.06, log = FALSE)"
+    beta_50_60 :
+      scale :  0.01
+      point : -0.18
+      distr : "function(u) qnorm(u,mean = -0.18, sd = 0.05, log = FALSE)"
+    beta_70_80 :
+      scale : 0.01
+      point : 0.16
+      distr : "function(u) qnorm(u,mean = 0.16, sd = 0.04, log = FALSE)"
+    beta_80_ge :
+      scale : 0.01
+      point : 0.32
+      distr : "function(u) qnorm(u,mean = 0.32, sd = 0.08, log = FALSE)"
+
+  binned_displ:
+    beta_le_30 :
+      scale :  0.01
+      point : -0.54
+      distr : "function(u) qnorm(u,mean = -0.54, sd = 0.07, log = FALSE)"
+    beta_30_40 :
+      scale :  0.01
+      point : -0.16
+      distr : "function(u) qnorm(u,mean = -0.16, sd = 0.08, log = FALSE)"
+    beta_40_50 :
+      scale :  0.01
+      point : -0.11
+      distr : "function(u) qnorm(u,mean = -0.11, sd = 0.09, log = FALSE)"
+    beta_50_60 :
+      scale :  0.01
+      point : -0.16
+      distr : "function(u) qnorm(u,mean = -0.16, sd = 0.07, log = FALSE)"
+    beta_70_80 :
+      scale : 0.01
+      point : 0.13
+      distr : "function(u) qnorm(u,mean = 0.13, sd = 0.07, log = FALSE)"
+    beta_80_ge :
+      scale : 0.01
+      point : 0.26
+      distr : "function(u) qnorm(u,mean = 0.26, sd = 0.1, log = FALSE)"
+
+  linear:
+    alpha_temp :
+      scale : 0.018
+      point : 0.44
+      distr : "function(u) qnorm(u,mean = 0.44, sd = 0.04, log = FALSE)"
+    alpha_precip :
+      scale : 0.000393701
+      point : 0
+      distr : "function(u) qnorm(u,mean = 0, sd = 0, log = FALSE)"
+
+  linear_wprecip:
+    alpha_temp :
+      scale : 0.018
+      point : 0.41
+      distr : "function(u) qnorm(u,mean = 0.41, sd = 0.06, log = FALSE)"
+    alpha_precip :
+      scale : 0.000393701
+      point : -0.16
+      distr : "function(u) qnorm(u,mean = -0.16, sd = 0.07, log = FALSE)"
+
+results_file_names_stubs : 
+  cases :
+    D1 : "D1_Cases_"
+    D2 : "D2_Cases_"
+    D3 : "D3_Cases_"
+    D4 : "D4_Cases_"
+    D5 : "D5_Cases_"
+    D6 : "D6_Cases_"
+  values :
+    D1 : "D1_Values_"
+    D2 : "D2_Values_"
+    D3 : "D3_Values_"
+    D4 : "D4_Values_"
+    D5 : "D5_Values_"
+    D6 : "D6_Values_"
+  all_results :
+    D1 : "D1_Scenario_"
+    D2 : "D2_Scenario_"
+    D3 : "D3_Scenario_"
+    D4 : "D4_Scenario_"
+    D5 : "D5_Scenario_"
+    D6 : "D6_Scenario_"
+  parset : "ParSampleSet_"
+
+results_sum_table_names_stubs :
+  cases         : "Table_Cases_"
+  values        : "Table_Values_"
+  all_results   : "Table_Scenario_"
+
+
+
+
+
+
+
