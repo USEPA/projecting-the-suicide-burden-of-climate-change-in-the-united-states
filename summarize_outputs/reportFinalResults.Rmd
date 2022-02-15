@@ -1,0 +1,974 @@
+---
+title : "Climate Change and Mental Health"
+date  : "`r Sys.Date()`"
+author: ICF International
+
+output:
+  html_document:
+    number_sections : no
+    toc             : yes
+
+params:
+  DISCOUNT_RATE      : 3
+  DISCOUNT_YEAR      : 2015
+  DOLLAR_SCALE       : 1000000
+  SIG_FIG            : 3
+  CONFIG_FILE        : "configuration.yaml"
+  CODE_DIR           : "/Users/abelova/ICF/EPA Climate and Mental Health - General/03_Analysis Data and Manuscript/modeling/ccmh-src"
+  RESULTS_DIR        : "/Users/abelova/ICF/EPA Climate and Mental Health - General/03_Analysis Data and Manuscript/modeling/ccmh-data/results"
+
+knit: (function(inputFile, encoding) {
+      out_dir <- "/Users/abelova/ICF/EPA Climate and Mental Health - General/03_Analysis Data and Manuscript/modeling/ccmh-data/results" ;
+      rmarkdown::render(inputFile,
+                        encoding=encoding, 
+                        output_file=file.path(out_dir, 'results_SUMMARY_2021-1018.html')) })
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(scales)
+library(tidyverse)
+library(configr)
+library(kableExtra)
+
+```
+
+```{r include=FALSE}
+
+source(file.path(params$CODE_DIR,"simulate","estimateUtils.R"), local = knitr::knit_global())
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+DEGREE_SET <- c( "D1" , "D2" , "D3", "D4", "D5", "D6" )
+ITER_FILE_LIST <- list()
+ITER_POP_FUTURE_FILE_LIST <- list()
+ITER_POP_FUTURE_INC_FUTURE_FILE_LIST <- list()
+ARRIVAL_YEAR_LIST <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+  ITER_FILE_NAME_STUB <- getOutFileHandle( params$RESULTS_DIR, config$results_file_names_stubs$all_results[[DEGREE]], 
+                                           FALSE, "PRESENT", "PRESENT", params$DISCOUNT_RATE, params$DISCOUNT_YEAR, NA , TRUE )
+  
+  ITER_FILE_NAME_SET <- list.files(path = params$RESULTS_DIR, pattern= paste("^",ITER_FILE_NAME_STUB,sep="") )
+  if ( length(ITER_FILE_NAME_SET) > 1) { ITER_FILE_NAME_SET <- rev(sort(ITER_FILE_NAME_SET)) }
+  IN_FILE_NAME <- file.path(params$RESULTS_DIR,ITER_FILE_NAME_SET[1])
+  ITER_FILE_LIST[[DEGREE]] <- IN_FILE_NAME
+
+  ITER_FILE_NAME_STUB <- getOutFileHandle( params$RESULTS_DIR, config$results_file_names_stubs$all_results[[DEGREE]], 
+                                           FALSE, "FUTURE", "PRESENT", params$DISCOUNT_RATE, params$DISCOUNT_YEAR, NA , TRUE )
+  
+  ITER_FILE_NAME_SET <- list.files(path = params$RESULTS_DIR, pattern= paste("^",ITER_FILE_NAME_STUB,sep="") )
+  if ( length(ITER_FILE_NAME_SET) > 1) { ITER_FILE_NAME_SET <- rev(sort(ITER_FILE_NAME_SET)) }
+  IN_FILE_NAME <- file.path(params$RESULTS_DIR,ITER_FILE_NAME_SET[1])
+  ITER_POP_FUTURE_FILE_LIST[[DEGREE]] <- IN_FILE_NAME
+
+  ITER_FILE_NAME_STUB <- getOutFileHandle( params$RESULTS_DIR, config$results_file_names_stubs$all_results[[DEGREE]], 
+                                           FALSE, "FUTURE", "FUTURE", params$DISCOUNT_RATE, params$DISCOUNT_YEAR, NA , TRUE )
+  
+  ITER_FILE_NAME_SET <- list.files(path = params$RESULTS_DIR, pattern= paste("^",ITER_FILE_NAME_STUB,sep="") )
+  if ( length(ITER_FILE_NAME_SET) > 1) { ITER_FILE_NAME_SET <- rev(sort(ITER_FILE_NAME_SET)) }
+  IN_FILE_NAME <- file.path(params$RESULTS_DIR,ITER_FILE_NAME_SET[1])
+  ITER_POP_FUTURE_INC_FUTURE_FILE_LIST[[DEGREE]] <- IN_FILE_NAME
+
+    
+  mod_set <- c()
+  year_set <- c()
+  for ( m in names(config$input_data$climate[[DEGREE]]) ){
+    mod_set <- c(mod_set,m)
+    year_set <- c(year_set,config$input_data$climate[[DEGREE]][[m]][["year"]])
+  }
+  ARRIVAL_YEAR_LIST[[DEGREE]] <- tibble(MODEL = mod_set, ARRIVAL_YEAR = as.numeric(year_set) )
+  
+}
+
+ARRIVAL_YEAR_TABLE <- bind_rows(ARRIVAL_YEAR_LIST, .id = "DEGREE") %>% spread(MODEL,ARRIVAL_YEAR)
+
+if (params$DOLLAR_SCALE==1000) {dollar_scale <- "thousands"}
+if (params$DOLLAR_SCALE==1000000) {dollar_scale <- "millions"}
+if (params$DOLLAR_SCALE==1000000000) {dollar_scale <- "billions"}
+
+DEGREE_NAME <- list()
+DEGREE_NAME[["D1"]] <- "1°C"
+DEGREE_NAME[["D2"]] <- "2°C"
+DEGREE_NAME[["D3"]] <- "3°C"
+DEGREE_NAME[["D4"]] <- "4°C"
+DEGREE_NAME[["D5"]] <- "5°C"
+DEGREE_NAME[["D6"]] <- "6°C"
+
+```
+
+# Table 2: Arrival Years of Each Integer Degree of Warming by GCM Model
+
+```{r scenario-details, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+#cat(paste("Discount rate   :", params$DISCOUNT_RATE,"\n\n"))
+#cat(paste("Discount year   :", params$DISCOUNT_YEAR,"\n\n"))
+
+ARRIVAL_YEAR_TABLE %>%
+  kbl(caption = "", digits = 0) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  footnote(general = "GCM - general circulation model") 
+
+```
+
+# Table 3: Climate Change-Attributable Suicide in the U.S.
+
+## Part 1: Overall U.S. Annual Impact (2015 population and 2015 income)
+
+```{r overall-result, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+tbl_list <- list()
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+
+tbl_list[[DEGREE]] <- res %>% 
+  group_by(HIF,MODEL,ITER) %>% 
+  summarise( cases_pt = sum(CASES_PT),
+             val_pt = sum(CASES_PT * VSL_PT  / params$DOLLAR_SCALE),
+             pdv_pt = sum(PDV_PT  / params$DOLLAR_SCALE),
+             cases = sum(CASES_ITER),
+             val = sum(CASES_ITER * VSL_ITER  / params$DOLLAR_SCALE),
+             pdv = sum(PDV_ITER / params$DOLLAR_SCALE) ) %>% 
+  ungroup() %>% 
+  group_by(ITER) %>% 
+  summarise( cases_pt = mean(cases_pt),
+             val_pt = mean(val_pt),
+             pdv_pt = mean(pdv_pt), 
+             cases = mean(cases),
+             val = mean(val),
+             pdv = mean(pdv) ) %>% 
+  ungroup() %>% 
+  summarise(
+    cases_pt = mean(cases_pt),
+    val_pt = mean(val_pt),
+    pdv_pt = mean(pdv_pt),
+    cases_lcb = quantile(cases,config$convergence$conv_quant$LCB), 
+    cases_ucb = quantile(cases,config$convergence$conv_quant$UCB), 
+    val_lcb = quantile(val,config$convergence$conv_quant$LCB), 
+    val_ucb = quantile(val,config$convergence$conv_quant$UCB), 
+    pdv_lcb = quantile(pdv,config$convergence$conv_quant$LCB), 
+    pdv_ucb = quantile(pdv,config$convergence$conv_quant$UCB)) %>%
+  mutate(
+    cases_entry = paste(number(signif(cases_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(cases_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(cases_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    val_entry = paste(number(signif(val_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(val_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(val_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    pdv_entry = paste(number(signif(pdv_pt,params$SIG_FIG),big.mark = ",")," (",
+                      number(signif(pdv_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                      number(signif(pdv_ucb,params$SIG_FIG),big.mark = ","),")", sep=""  )
+            ) %>% 
+  select(cases_entry, val_entry, pdv_entry) %>%
+  gather(Metric, value, cases_entry:pdv_entry)  %>%
+  mutate(Scenario=Metric,
+         Scenario=recode(Scenario,  cases_entry="2015 population and 2015 income", 
+                         val_entry="2015 population and 2015 income",   
+                         pdv_entry="2015 population and 2015 income"),
+         Metric = recode(Metric,cases_entry="Cases$^{1}$", 
+                         val_entry=paste("Undiscounted value$^{2}$ (",dollar_scale," 2015 USD)" , sep="" ), 
+                         pdv_entry=paste("PDV$^{2}$ (3%, ",dollar_scale," 2015 USD)" , sep="" ) ) ) %>%
+  select(Scenario,Metric,value) %>%
+  rename_at( "value" , ~DEGREE_NAME[[DEGREE]])
+
+}
+
+tbl <- tbl_list %>% reduce(left_join, by = c("Scenario","Metric")) 
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c(" " = 1, " " = 1, "Degrees Celsius Above Baseline for Average U.S. Temperature" = 6 ))%>%
+  pack_rows(index = c("Part 1: Overall U.S. Annual Impact" = 3)) %>%
+  footnote(general = "PDV - present discounted value, USD - U.S. dollars", 
+           number = c("Annual number of suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "Annual value of avoiding suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.")
+           ) 
+
+
+```
+
+## Part 2: U.S. Annual Impact Sensitivity to Assumptions About Population and Income Growth
+
+```{r scenario-sensitivity, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+tbl_list <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_POP_FUTURE_FILE_LIST[[DEGREE]])
+
+tbl_list[[DEGREE]] <- res %>% 
+  group_by(HIF,MODEL,ITER) %>% 
+  summarise( cases_pt = sum(CASES_PT),
+             val_pt = sum(CASES_PT * VSL_PT  / params$DOLLAR_SCALE),
+             pdv_pt = sum(PDV_PT  / params$DOLLAR_SCALE),
+             cases = sum(CASES_ITER),
+             val = sum(CASES_ITER * VSL_ITER  / params$DOLLAR_SCALE),
+             pdv = sum(PDV_ITER / params$DOLLAR_SCALE) ) %>% 
+  ungroup() %>% 
+  group_by(ITER) %>% 
+  summarise( cases_pt = mean(cases_pt),
+             val_pt = mean(val_pt),
+             pdv_pt = mean(pdv_pt), 
+             cases = mean(cases),
+             val = mean(val),
+             pdv = mean(pdv) ) %>% 
+  ungroup() %>% 
+  summarise(
+    cases_pt = mean(cases_pt),
+    val_pt = mean(val_pt),
+    pdv_pt = mean(pdv_pt),
+    cases_lcb = quantile(cases,config$convergence$conv_quant$LCB), 
+    cases_ucb = quantile(cases,config$convergence$conv_quant$UCB), 
+    val_lcb = quantile(val,config$convergence$conv_quant$LCB), 
+    val_ucb = quantile(val,config$convergence$conv_quant$UCB), 
+    pdv_lcb = quantile(pdv,config$convergence$conv_quant$LCB), 
+    pdv_ucb = quantile(pdv,config$convergence$conv_quant$UCB)) %>%
+  mutate(
+    cases_entry = paste(number(signif(cases_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(cases_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(cases_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    val_entry = paste(number(signif(val_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(val_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(val_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    pdv_entry = paste(number(signif(pdv_pt,params$SIG_FIG),big.mark = ",")," (",
+                      number(signif(pdv_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                      number(signif(pdv_ucb,params$SIG_FIG),big.mark = ","),")", sep=""  )
+            ) %>% 
+  select(cases_entry, val_entry, pdv_entry) %>%
+  gather(Metric, value, cases_entry:pdv_entry)  %>%
+  mutate(Scenario=Metric,
+         Scenario=recode(Scenario,  cases_entry="future population and 2015 income", 
+                         val_entry="future population and 2015 income",   
+                         pdv_entry="future population and 2015 income"),
+         Metric = recode(Metric,cases_entry="Cases$^{1}$", 
+                         val_entry=paste("Undiscounted value$^{2}$ (",dollar_scale," 2015 USD)" , sep="" ), 
+                         pdv_entry=paste("PDV$^{2}$ (3%, ",dollar_scale," 2015 USD)" , sep="" ) ) ) %>%
+  select(Scenario,Metric,value) %>%
+  rename_at( "value" , ~DEGREE_NAME[[DEGREE]])
+
+}
+
+tbl_pop_future <- tbl_list %>% reduce(left_join, by = c("Scenario","Metric")) 
+
+
+tbl_list <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_POP_FUTURE_INC_FUTURE_FILE_LIST[[DEGREE]])
+
+tbl_list[[DEGREE]] <- res %>% 
+  group_by(HIF,MODEL,ITER) %>% 
+  summarise( cases_pt = sum(CASES_PT),
+             val_pt = sum(CASES_PT * VSL_PT  / params$DOLLAR_SCALE),
+             pdv_pt = sum(PDV_PT  / params$DOLLAR_SCALE),
+             cases = sum(CASES_ITER),
+             val = sum(CASES_ITER * VSL_ITER  / params$DOLLAR_SCALE),
+             pdv = sum(PDV_ITER / params$DOLLAR_SCALE) ) %>% 
+  ungroup() %>% 
+  group_by(ITER) %>% 
+  summarise( cases_pt = mean(cases_pt),
+             val_pt = mean(val_pt),
+             pdv_pt = mean(pdv_pt), 
+             cases = mean(cases),
+             val = mean(val),
+             pdv = mean(pdv) ) %>% 
+  ungroup() %>% 
+  summarise(
+    cases_pt = mean(cases_pt),
+    val_pt = mean(val_pt),
+    pdv_pt = mean(pdv_pt),
+    cases_lcb = quantile(cases,config$convergence$conv_quant$LCB), 
+    cases_ucb = quantile(cases,config$convergence$conv_quant$UCB), 
+    val_lcb = quantile(val,config$convergence$conv_quant$LCB), 
+    val_ucb = quantile(val,config$convergence$conv_quant$UCB), 
+    pdv_lcb = quantile(pdv,config$convergence$conv_quant$LCB), 
+    pdv_ucb = quantile(pdv,config$convergence$conv_quant$UCB)) %>%
+  mutate(
+    cases_entry = paste(number(signif(cases_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(cases_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(cases_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    val_entry = paste(number(signif(val_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(val_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(val_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    pdv_entry = paste(number(signif(pdv_pt,params$SIG_FIG),big.mark = ",")," (",
+                      number(signif(pdv_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                      number(signif(pdv_ucb,params$SIG_FIG),big.mark = ","),")", sep=""  )
+            ) %>% 
+  select(cases_entry, val_entry, pdv_entry) %>%
+  gather(Metric, value, cases_entry:pdv_entry)  %>%
+  mutate(Scenario=Metric,
+         Scenario=recode(Scenario,  cases_entry="future population and future income", 
+                         val_entry="future population and future income",   
+                         pdv_entry="future population and future income"),
+         Metric = recode(Metric,cases_entry="Cases$^{1}$", 
+                         val_entry=paste("Undiscounted value$^{2}$ (",dollar_scale," 2015 USD)" , sep="" ), 
+                         pdv_entry=paste("PDV$^{2}$ (3%, ",dollar_scale," 2015 USD)" , sep="" ) ) ) %>%
+  select(Scenario,Metric,value) %>%
+  rename_at( "value" , ~DEGREE_NAME[[DEGREE]])
+
+}
+
+tbl_pop_future_inc_future <- tbl_list %>% reduce(left_join, by = c("Scenario","Metric")) 
+
+tbl <- bind_rows(tbl_pop_future, tbl_pop_future_inc_future)
+
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c(" " = 1, " " = 1, "Degrees Celsius Above Baseline for Average U.S. Temperature" = 6 ))%>%
+  pack_rows(index = c("Part 2: U.S. Annual Impact Sensitivity to Assumptions About Population and Income Growth" = 6)) %>%
+  footnote(general = "PDV - present discounted value, USD - U.S. dollars", 
+           number = c("Annual number of suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "Annual value of avoiding suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.")
+           ) 
+
+
+
+```
+
+# Table S5: U.S. Annual Impact Sensitivity to Global Climate Model and Climate-Suicide Incidence Specification Choice
+
+## Part 1: U.S. Annual Impact Sensitivity to Global Climate Model Choice
+
+```{r model-sensitivity, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+tbl_list <- list()
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+
+tbl_list[[DEGREE]] <- res %>% 
+  group_by(HIF,MODEL,ITER) %>% 
+  summarise( cases_pt = sum(CASES_PT),
+             val_pt = sum(CASES_PT * VSL_PT  / params$DOLLAR_SCALE),
+             pdv_pt = sum(PDV_PT  / params$DOLLAR_SCALE),
+             cases = sum(CASES_ITER),
+             val = sum(CASES_ITER * VSL_ITER  / params$DOLLAR_SCALE),
+             pdv = sum(PDV_ITER / params$DOLLAR_SCALE) ) %>% 
+  ungroup() %>% 
+  group_by(ITER) %>%
+  mutate( avg_cases_pt = mean(cases_pt),
+          avg_val_pt = mean(val_pt),
+          avg_pdv_pt = mean(pdv_pt), 
+          avg_cases = mean(cases),
+          avg_val = mean(val),
+          avg_pdv = mean(pdv) ) %>%
+  ungroup() %>% 
+  group_by(MODEL,ITER) %>% 
+  summarise( cases_pt = mean(cases_pt),
+             val_pt = mean(val_pt),
+             pdv_pt = mean(pdv_pt), 
+             cases = mean(cases),
+             val = mean(val),
+             pdv = mean(pdv),
+             ratio_cases_pt = mean( cases_pt / avg_cases_pt ) ,
+             ratio_val_pt = mean(val_pt / avg_val_pt),
+             ratio_pdv_pt = mean(pdv_pt / avg_pdv_pt), 
+             ratio_cases = mean(cases / avg_cases),
+             ratio_val = mean(val / avg_val),
+             ratio_pdv = mean(pdv / avg_pdv) 
+             ) %>% 
+  ungroup() %>%
+  group_by(MODEL) %>% 
+  summarise(
+    cases_pt = mean(cases_pt),
+    val_pt = mean(val_pt),
+    pdv_pt = mean(pdv_pt),
+    cases_lcb = quantile(cases,config$convergence$conv_quant$LCB), 
+    cases_ucb = quantile(cases,config$convergence$conv_quant$UCB), 
+    val_lcb = quantile(val,config$convergence$conv_quant$LCB), 
+    val_ucb = quantile(val,config$convergence$conv_quant$UCB), 
+    pdv_lcb = quantile(pdv,config$convergence$conv_quant$LCB), 
+    pdv_ucb = quantile(pdv,config$convergence$conv_quant$UCB),
+    ratio_cases_pt = mean(ratio_cases_pt) ,
+    ratio_val_pt = mean(ratio_val_pt) ,
+    ratio_pdv_pt = mean(ratio_pdv_pt) ,
+    ratio_cases_lcb = quantile(ratio_cases,config$convergence$conv_quant$LCB) , 
+    ratio_cases_ucb = quantile(ratio_cases,config$convergence$conv_quant$UCB) , 
+    ratio_val_lcb = quantile(ratio_val,config$convergence$conv_quant$LCB) , 
+    ratio_val_ucb = quantile(ratio_val,config$convergence$conv_quant$UCB) , 
+    ratio_pdv_lcb = quantile(ratio_pdv,config$convergence$conv_quant$LCB) , 
+    ratio_pdv_ucb = quantile(ratio_pdv,config$convergence$conv_quant$UCB) 
+    ) %>%
+  mutate(
+    cases_entry = paste(number(signif(cases_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(cases_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(cases_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    val_entry = paste(number(signif(val_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(val_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(val_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    pdv_entry = paste(number(signif(pdv_pt,params$SIG_FIG),big.mark = ",")," (",
+                      number(signif(pdv_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                      number(signif(pdv_ucb,params$SIG_FIG),big.mark = ","),")", sep=""  ),
+    ratio_cases_entry = paste(number(signif(ratio_cases_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                        number(signif(ratio_cases_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                        number(signif(ratio_cases_ucb,params$SIG_FIG + 1 ),big.mark = ","),")", sep="" ),
+    ratio_val_entry = paste(number(signif(ratio_val_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                        number(signif(ratio_val_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                        number(signif(ratio_val_ucb,params$SIG_FIG + 1),big.mark = ","),")", sep="" ),
+    ratio_pdv_entry = paste(number(signif(ratio_pdv_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                      number(signif(ratio_pdv_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                      number(signif(ratio_pdv_ucb,params$SIG_FIG + 1),big.mark = ","),")", sep=""  )
+
+            ) %>% 
+  select(MODEL, cases_entry, val_entry, pdv_entry, ratio_cases_entry, ratio_val_entry, ratio_pdv_entry) %>%
+  gather(Metric, value, cases_entry:ratio_pdv_entry)  %>%
+  mutate(Scenario=paste(MODEL, " (2015 population and 2015 income)",sep=""),
+         Metric = recode(Metric,
+                         cases_entry="Cases$^1$", 
+                         val_entry=paste("Undiscounted value$^2$ (",dollar_scale," 2015 USD)" , sep="" ), 
+                         pdv_entry=paste("PDV$^2$ (3%, ",dollar_scale," 2015 USD)" , sep="" ), 
+                         ratio_cases_entry="Cases, ratio to average$^3$", 
+                         ratio_val_entry="Undiscounted value, ratio to average$^3$", 
+                         ratio_pdv_entry="PDV 3%, ratio to average$^3$" 
+                         ) ) %>%
+  select(Scenario,Metric,value) %>%
+  rename_at( "value" , ~DEGREE_NAME[[DEGREE]])
+
+}
+
+tbl <- tbl_list %>% reduce(left_join, by = c("Scenario","Metric")) %>% arrange_at(c("Scenario"))
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c(" " = 1, " " = 1, "Degrees Celsius Above Baseline for Average U.S. Temperature" = 6 )) %>%
+  pack_rows(index = c("Part 3: U.S. Annual Impact Sensitivity to Global Climate Model Choice" = 36)) %>%
+  footnote(general = "PDV - present discounted value, USD - U.S. dollars", 
+           number = c("Annual number of suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "Annual value of avoiding suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "The ratio is estimated by dividing a model-specific result with the result averaged over all model choices. The range in parentheses captures middle 90% of simulation results.")
+           ) 
+
+
+```
+
+## Part 2: U.S. Annual Impact Sensitivity to Climate-Suicide Incidence Specification Choice
+
+```{r specification-sensitivity, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+tbl_list <- list()
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+
+tbl_list[[DEGREE]] <- res %>% 
+  group_by(HIF,MODEL,ITER) %>% 
+  summarise( cases_pt = sum(CASES_PT),
+             val_pt = sum(CASES_PT * VSL_PT  / params$DOLLAR_SCALE),
+             pdv_pt = sum(PDV_PT  / params$DOLLAR_SCALE),
+             cases = sum(CASES_ITER),
+             val = sum(CASES_ITER * VSL_ITER  / params$DOLLAR_SCALE),
+             pdv = sum(PDV_ITER / params$DOLLAR_SCALE) ) %>% 
+  ungroup() %>% 
+  group_by(ITER) %>%
+  mutate( avg_cases_pt = mean(cases_pt),
+          avg_val_pt = mean(val_pt),
+          avg_pdv_pt = mean(pdv_pt), 
+          avg_cases = mean(cases),
+          avg_val = mean(val),
+          avg_pdv = mean(pdv) ) %>%
+  ungroup() %>% 
+  group_by(HIF,ITER) %>% 
+  summarise( cases_pt = mean(cases_pt),
+             val_pt = mean(val_pt),
+             pdv_pt = mean(pdv_pt), 
+             cases = mean(cases),
+             val = mean(val),
+             pdv = mean(pdv),
+             ratio_cases_pt = mean( cases_pt / avg_cases_pt ) ,
+             ratio_val_pt = mean(val_pt / avg_val_pt),
+             ratio_pdv_pt = mean(pdv_pt / avg_pdv_pt), 
+             ratio_cases = mean(cases / avg_cases),
+             ratio_val = mean(val / avg_val),
+             ratio_pdv = mean(pdv / avg_pdv) 
+             ) %>% 
+  ungroup() %>%
+  group_by(HIF) %>% 
+  summarise(
+    cases_pt = mean(cases_pt),
+    val_pt = mean(val_pt),
+    pdv_pt = mean(pdv_pt),
+    cases_lcb = quantile(cases,config$convergence$conv_quant$LCB), 
+    cases_ucb = quantile(cases,config$convergence$conv_quant$UCB), 
+    val_lcb = quantile(val,config$convergence$conv_quant$LCB), 
+    val_ucb = quantile(val,config$convergence$conv_quant$UCB), 
+    pdv_lcb = quantile(pdv,config$convergence$conv_quant$LCB), 
+    pdv_ucb = quantile(pdv,config$convergence$conv_quant$UCB),
+    ratio_cases_pt = mean(ratio_cases_pt) ,
+    ratio_val_pt = mean(ratio_val_pt) ,
+    ratio_pdv_pt = mean(ratio_pdv_pt) ,
+    ratio_cases_lcb = quantile(ratio_cases,config$convergence$conv_quant$LCB) , 
+    ratio_cases_ucb = quantile(ratio_cases,config$convergence$conv_quant$UCB) , 
+    ratio_val_lcb = quantile(ratio_val,config$convergence$conv_quant$LCB) , 
+    ratio_val_ucb = quantile(ratio_val,config$convergence$conv_quant$UCB) , 
+    ratio_pdv_lcb = quantile(ratio_pdv,config$convergence$conv_quant$LCB) , 
+    ratio_pdv_ucb = quantile(ratio_pdv,config$convergence$conv_quant$UCB) 
+    ) %>%
+  mutate(
+    cases_entry = paste(number(signif(cases_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(cases_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(cases_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    val_entry = paste(number(signif(val_pt,params$SIG_FIG),big.mark = ",")," (",
+                        number(signif(val_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                        number(signif(val_ucb,params$SIG_FIG),big.mark = ","),")", sep="" ),
+    pdv_entry = paste(number(signif(pdv_pt,params$SIG_FIG),big.mark = ",")," (",
+                      number(signif(pdv_lcb,params$SIG_FIG),big.mark = ","),"\u2013",
+                      number(signif(pdv_ucb,params$SIG_FIG),big.mark = ","),")", sep=""  ),
+    ratio_cases_entry = paste(number(signif(ratio_cases_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                        number(signif(ratio_cases_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                        number(signif(ratio_cases_ucb,params$SIG_FIG + 1 ),big.mark = ","),")", sep="" ),
+    ratio_val_entry = paste(number(signif(ratio_val_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                        number(signif(ratio_val_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                        number(signif(ratio_val_ucb,params$SIG_FIG + 1),big.mark = ","),")", sep="" ),
+    ratio_pdv_entry = paste(number(signif(ratio_pdv_pt,params$SIG_FIG + 1),big.mark = ",")," (",
+                      number(signif(ratio_pdv_lcb,params$SIG_FIG + 1),big.mark = ","),"\u2013",
+                      number(signif(ratio_pdv_ucb,params$SIG_FIG + 1),big.mark = ","),")", sep=""  )
+
+            ) %>% 
+  select(HIF, cases_entry, val_entry, pdv_entry, ratio_cases_entry, ratio_val_entry, ratio_pdv_entry) %>%
+  gather(Metric, value, cases_entry:ratio_pdv_entry)  %>%
+  mutate(HIF = recode(HIF, 
+                      binned="Binned monthly temperature", 
+                      binned_displ="Binned monthly temperature with displacement",
+                      linear = "Average monthly temperature",
+                      linear_wprecip = "Average monthly temperature and cumulative precipitation"
+                      ),
+         Scenario=paste(HIF, " (2015 population and 2015 income)", sep=""),
+         Metric = recode(Metric,
+                         cases_entry="Cases$^1$", 
+                         val_entry=paste("Undiscounted value$^2$ (",dollar_scale," 2015 USD)" , sep="" ), 
+                         pdv_entry=paste("PDV$^2$ (3%, ",dollar_scale," 2015 USD)" , sep="" ), 
+                         ratio_cases_entry="Cases, ratio to average$^3$", 
+                         ratio_val_entry="Undiscounted value, ratio to average$^3$", 
+                         ratio_pdv_entry="PDV 3%, ratio to average$^3$" 
+                         ) ) %>%
+  select(Scenario,Metric,value) %>%
+  rename_at( "value" , ~DEGREE_NAME[[DEGREE]])
+
+}
+
+tbl <- tbl_list %>% reduce(left_join, by = c("Scenario","Metric")) %>% arrange_at(c("Scenario"))
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c(" " = 1, " " = 1, "Degrees Celsius Above Baseline for Average U.S. Temperature" = 6 ))%>%
+  pack_rows(index = c("Part 4: U.S. Annual Impact Sensitivity to Climate-Suicide Incidence Specification Choice" = 24)) %>%
+  footnote(general = "PDV - present discounted value, USD - U.S. dollars", 
+           number = c("Annual number of suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "Annual value of avoiding suicides attributable to change in climate corresponding to a warming degree. The range in parentheses captures middle 90% of simulation results.",
+                      "The ratio is estimated by dividing a model-specific result with the result averaged over all model choices. The range in parentheses captures middle 90% of simulation results.")
+           ) 
+
+
+
+```
+
+
+# Table S6: Uncertainty and Variability Analysis
+
+## Part 1: PDV 3%, 2015 population and 2015 income
+
+```{r uncertainty-analysis-part1, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+
+tbl_list <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+MODEL_LIST <- res %>% distinct(MODEL) %>% pull(MODEL)
+HIF_LIST <- res %>% distinct(HIF) %>% pull(HIF)
+
+m_list <- list()
+for (m in MODEL_LIST) {
+  
+  h_list <- list()
+  for (h in HIF_LIST) {
+    
+    subRes <- res %>% filter(MODEL==m & HIF==h)
+    
+    if (h =="binned" | h=="binned_displ") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$D_le_30)) +
+                     scale(rank(subRes$D_30_40)) +
+                     scale(rank(subRes$D_40_50)) +
+                     scale(rank(subRes$D_50_60)) +
+                     scale(rank(subRes$D_80_ge)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","D_le_30","D_30_40","D_40_50","D_50_60","D_80_ge","VSL")
+      regmod <- c( (regmod["D_le_30"]^2 + regmod["D_30_40"]^2 + regmod["D_40_50"]^2 + regmod["D_50_60"]^2 + regmod["D_80_ge"]^2)^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+      
+      }
+    if (h=="linear") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","CLIM","VSL")
+      
+    }
+    if (h=="linear_wprecip") {
+     regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$PREC)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","TEMP","PREC","VSL")
+      regmod <- c( (regmod["TEMP"]^2 + regmod["PREC"]^2 )^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+    }
+    
+    regmod <- regmod[names(regmod) %in% c("POP","IR","HIF","CLIM","VSL") ]
+    h_list[[h]] <- regmod
+  
+  }
+  m_list[[m]] <- bind_rows(h_list,.id="HIF_SPEC")
+  
+}
+
+tbl_list[[DEGREE]] <- bind_rows(m_list,.id="MODEL") %>% 
+  mutate(HIF_SPEC=recode(HIF_SPEC,  
+                    binned="Binned monthly temperature", 
+                    binned_displ="Binned monthly temperature with displacement",
+                    linear = "Average monthly temperature",
+                    linear_wprecip = "Average monthly temperature and cumulative precipitation")) 
+
+}
+
+tbl <- bind_rows(tbl_list, .id="DEGREE") %>% arrange_at(c("HIF_SPEC","MODEL","DEGREE")) %>%
+  select(MODEL, HIF_SPEC, POP, IR, HIF, CLIM, VSL) %>%
+  #select(DEGREE, MODEL, HIF_SPEC, srrc_POP, srrc_IR, srrc_HIF, srrc_CLIM, srrc_VSL) %>%
+  #mutate(DEGREE=recode(DEGREE,  
+  #                  D1 = DEGREE_NAME[["D1"]], 
+  #                  D2 = DEGREE_NAME[["D2"]],
+  #                  D3 = DEGREE_NAME[["D3"]],
+  #                  D4 = DEGREE_NAME[["D4"]],
+  #                  D5 = DEGREE_NAME[["D5"]],
+  #                  D6 = DEGREE_NAME[["D6"]])) %>%
+  #rename_at( "DEGREE" , ~"Warming Degree") %>%*
+  group_by(MODEL, HIF_SPEC) %>%
+  summarise(POP=mean(POP),IR=mean(IR),HIF=mean(HIF),CLIM=mean(CLIM),VSL=mean(VSL)) %>%
+  mutate(
+    POP = number(signif(POP,params$SIG_FIG),big.mark = ","),
+    IR = number(signif(IR,params$SIG_FIG),big.mark = ","),
+    HIF = number(signif(HIF,params$SIG_FIG),big.mark = ","),
+    CLIM = number(signif(CLIM,params$SIG_FIG),big.mark = ","),
+    VSL = number(signif(VSL,params$SIG_FIG),big.mark = ",")
+            ) %>% 
+  rename_at( "MODEL" , ~"Global Circulation Model") %>%
+  rename_at( "HIF_SPEC" , ~"CSR Specification") %>%
+  rename_at( "POP" , ~"Population Size Variability") %>%
+  rename_at( "IR" , ~"Suicide Rate Variability") %>%
+  rename_at( "HIF" , ~"CSR Sampling Uncertaitny$^2$") %>%
+  rename_at( "CLIM" , ~"Climate Variables$^3$") %>%
+  rename_at( "VSL" , ~"VSL Uncertainty")
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c( " " = 1, " " = 1, "Standardized Rank Regression Coefficients$^1$" = 5 ))%>%
+  pack_rows(index = c("Part 1: PDV 3%, 2015 population and 2015 income" = 24)) %>%
+  footnote(general = "PDV - present discounted value, CSR - climate-suiride realtionship, VSL - value of a statistical life", 
+           number = c("Standardized coefficients obtained from a regression of warming degree-, sex-, age group-, state-, and sampling iteration-specific PDV rank on ranks of the corresponding uncertainty and variability factors. The table reports averages over warming degree results.",
+                      "CSR sampling is represented by the Euclidean norm of the sampled regression coefficients from distributions in Table 1.",
+                      "For the binned CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for number of days in each temperature bin For linear temperature CSR, climate variability is represented by the standardized rank regression coefficient of average monthly temperature. For linear temperature with precipitation CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for average monthly temperature and cumulative precipitation.")
+           ) 
+
+
+```
+
+## Part 2: PDV 3%, future population and 2015 income
+
+```{r uncertainty-analysis-part2, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+
+tbl_list <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+MODEL_LIST <- res %>% distinct(MODEL) %>% pull(MODEL)
+HIF_LIST <- res %>% distinct(HIF) %>% pull(HIF)
+
+m_list <- list()
+for (m in MODEL_LIST) {
+  
+  h_list <- list()
+  for (h in HIF_LIST) {
+    
+    subRes <- res %>% filter(MODEL==m & HIF==h)
+    
+    if (h =="binned" | h=="binned_displ") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$D_le_30)) +
+                     scale(rank(subRes$D_30_40)) +
+                     scale(rank(subRes$D_40_50)) +
+                     scale(rank(subRes$D_50_60)) +
+                     scale(rank(subRes$D_80_ge)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","D_le_30","D_30_40","D_40_50","D_50_60","D_80_ge","VSL")
+      regmod <- c( (regmod["D_le_30"]^2 + regmod["D_30_40"]^2 + regmod["D_40_50"]^2 + regmod["D_50_60"]^2 + regmod["D_80_ge"]^2)^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+      
+      }
+    if (h=="linear") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","CLIM","VSL")
+      
+    }
+    if (h=="linear_wprecip") {
+     regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$PREC)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","TEMP","PREC","VSL")
+      regmod <- c( (regmod["TEMP"]^2 + regmod["PREC"]^2 )^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+    }
+    
+    regmod <- regmod[names(regmod) %in% c("POP","IR","HIF","CLIM","VSL") ]
+    h_list[[h]] <- regmod
+  
+  }
+  m_list[[m]] <- bind_rows(h_list,.id="HIF_SPEC")
+  
+}
+
+tbl_list[[DEGREE]] <- bind_rows(m_list,.id="MODEL") %>% 
+  mutate(HIF_SPEC=recode(HIF_SPEC,  
+                    binned="Binned monthly temperature", 
+                    binned_displ="Binned monthly temperature with displacement",
+                    linear = "Average monthly temperature",
+                    linear_wprecip = "Average monthly temperature and cumulative precipitation")) 
+
+}
+
+tbl <- bind_rows(tbl_list, .id="DEGREE") %>% arrange_at(c("HIF_SPEC","MODEL","DEGREE")) %>%
+  select(MODEL, HIF_SPEC, POP, IR, HIF, CLIM, VSL) %>%
+  #select(DEGREE, MODEL, HIF_SPEC, srrc_POP, srrc_IR, srrc_HIF, srrc_CLIM, srrc_VSL) %>%
+  #mutate(DEGREE=recode(DEGREE,  
+  #                  D1 = DEGREE_NAME[["D1"]], 
+  #                  D2 = DEGREE_NAME[["D2"]],
+  #                  D3 = DEGREE_NAME[["D3"]],
+  #                  D4 = DEGREE_NAME[["D4"]],
+  #                  D5 = DEGREE_NAME[["D5"]],
+  #                  D6 = DEGREE_NAME[["D6"]])) %>%
+  #rename_at( "DEGREE" , ~"Warming Degree") %>%*
+  group_by(MODEL, HIF_SPEC) %>%
+  summarise(POP=mean(POP),IR=mean(IR),HIF=mean(HIF),CLIM=mean(CLIM),VSL=mean(VSL)) %>%
+  mutate(
+    POP = number(signif(POP,params$SIG_FIG),big.mark = ","),
+    IR = number(signif(IR,params$SIG_FIG),big.mark = ","),
+    HIF = number(signif(HIF,params$SIG_FIG),big.mark = ","),
+    CLIM = number(signif(CLIM,params$SIG_FIG),big.mark = ","),
+    VSL = number(signif(VSL,params$SIG_FIG),big.mark = ",")
+            ) %>% 
+  rename_at( "MODEL" , ~"Global Circulation Model") %>%
+  rename_at( "HIF_SPEC" , ~"CSR Specification") %>%
+  rename_at( "POP" , ~"Population Size Variability") %>%
+  rename_at( "IR" , ~"Suicide Rate Variability") %>%
+  rename_at( "HIF" , ~"CSR Sampling Uncertaitny$^2$") %>%
+  rename_at( "CLIM" , ~"Climate Variables$^3$") %>%
+  rename_at( "VSL" , ~"VSL Uncertainty")
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c( " " = 1, " " = 1, "Standardized Rank Regression Coefficients$^1$" = 5 ))%>%
+  pack_rows(index = c("Part 2: PDV 3%, future population and 2015 income" = 24)) %>%
+  footnote(general = "PDV - present discounted value, CSR - climate-suiride realtionship, VSL - value of a statistical life", 
+           number = c("Standardized coefficients obtained from a regression of warming degree-, sex-, age group-, state-, and sampling iteration-specific PDV rank on ranks of the corresponding uncertainty and variability factors. The table reports averages over warming degree results.",
+                      "CSR sampling is represented by the Euclidean norm of the sampled regression coefficients from distributions in Table 1.",
+                      "For the binned CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for number of days in each temperature bin For linear temperature CSR, climate variability is represented by the standardized rank regression coefficient of average monthly temperature. For linear temperature with precipitation CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for average monthly temperature and cumulative precipitation.")
+           ) 
+
+
+```
+
+## Part 3: PDV 3%, future population and future income
+
+```{r uncertainty-analysis-part3, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+config <- read.config(file=file.path(params$CODE_DIR,"configuration.yaml"))
+
+
+tbl_list <- list()
+
+for (DEGREE in DEGREE_SET) {
+  
+res <- read_csv(ITER_FILE_LIST[[DEGREE]])
+MODEL_LIST <- res %>% distinct(MODEL) %>% pull(MODEL)
+HIF_LIST <- res %>% distinct(HIF) %>% pull(HIF)
+
+m_list <- list()
+for (m in MODEL_LIST) {
+  
+  h_list <- list()
+  for (h in HIF_LIST) {
+    
+    subRes <- res %>% filter(MODEL==m & HIF==h)
+    
+    if (h =="binned" | h=="binned_displ") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$D_le_30)) +
+                     scale(rank(subRes$D_30_40)) +
+                     scale(rank(subRes$D_40_50)) +
+                     scale(rank(subRes$D_50_60)) +
+                     scale(rank(subRes$D_80_ge)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","D_le_30","D_30_40","D_40_50","D_50_60","D_80_ge","VSL")
+      regmod <- c( (regmod["D_le_30"]^2 + regmod["D_30_40"]^2 + regmod["D_40_50"]^2 + regmod["D_50_60"]^2 + regmod["D_80_ge"]^2)^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+      
+      }
+    if (h=="linear") {
+      regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","CLIM","VSL")
+      
+    }
+    if (h=="linear_wprecip") {
+     regmod <- lm(scale(rank(subRes$PDV_ITER)) ~ 
+                     scale(rank(subRes$POP_SIZE) ) + 
+                     scale(rank(subRes$IR100K)) + 
+                     scale(rank(subRes$HIF_NORM)) +
+                     scale(rank(subRes$TEMP)) +
+                     scale(rank(subRes$PREC)) +
+                     scale(rank(subRes$VSL_ITER)) )$coefficients
+      names(regmod) <- c("const","POP","IR","HIF","TEMP","PREC","VSL")
+      regmod <- c( (regmod["TEMP"]^2 + regmod["PREC"]^2 )^(1/2),
+                   regmod)
+      names(regmod)[1] <- "CLIM"
+    }
+    
+    regmod <- regmod[names(regmod) %in% c("POP","IR","HIF","CLIM","VSL") ]
+    h_list[[h]] <- regmod
+  
+  }
+  m_list[[m]] <- bind_rows(h_list,.id="HIF_SPEC")
+  
+}
+
+tbl_list[[DEGREE]] <- bind_rows(m_list,.id="MODEL") %>% 
+  mutate(HIF_SPEC=recode(HIF_SPEC,  
+                    binned="Binned monthly temperature", 
+                    binned_displ="Binned monthly temperature with displacement",
+                    linear = "Average monthly temperature",
+                    linear_wprecip = "Average monthly temperature and cumulative precipitation")) 
+
+}
+
+tbl <- bind_rows(tbl_list, .id="DEGREE") %>% arrange_at(c("HIF_SPEC","MODEL","DEGREE")) %>%
+  select(MODEL, HIF_SPEC, POP, IR, HIF, CLIM, VSL) %>%
+  #select(DEGREE, MODEL, HIF_SPEC, srrc_POP, srrc_IR, srrc_HIF, srrc_CLIM, srrc_VSL) %>%
+  #mutate(DEGREE=recode(DEGREE,  
+  #                  D1 = DEGREE_NAME[["D1"]], 
+  #                  D2 = DEGREE_NAME[["D2"]],
+  #                  D3 = DEGREE_NAME[["D3"]],
+  #                  D4 = DEGREE_NAME[["D4"]],
+  #                  D5 = DEGREE_NAME[["D5"]],
+  #                  D6 = DEGREE_NAME[["D6"]])) %>%
+  #rename_at( "DEGREE" , ~"Warming Degree") %>%*
+  group_by(MODEL, HIF_SPEC) %>%
+  summarise(POP=mean(POP),IR=mean(IR),HIF=mean(HIF),CLIM=mean(CLIM),VSL=mean(VSL)) %>%
+  mutate(
+    POP = number(signif(POP,params$SIG_FIG),big.mark = ","),
+    IR = number(signif(IR,params$SIG_FIG),big.mark = ","),
+    HIF = number(signif(HIF,params$SIG_FIG),big.mark = ","),
+    CLIM = number(signif(CLIM,params$SIG_FIG),big.mark = ","),
+    VSL = number(signif(VSL,params$SIG_FIG),big.mark = ",")
+            ) %>% 
+  rename_at( "MODEL" , ~"Global Circulation Model") %>%
+  rename_at( "HIF_SPEC" , ~"CSR Specification") %>%
+  rename_at( "POP" , ~"Population Size Variability") %>%
+  rename_at( "IR" , ~"Suicide Rate Variability") %>%
+  rename_at( "HIF" , ~"CSR Sampling Uncertaitny$^2$") %>%
+  rename_at( "CLIM" , ~"Climate Variables$^3$") %>%
+  rename_at( "VSL" , ~"VSL Uncertainty")
+
+tbl %>%
+  kbl(caption = "", digits = 0, format.args = list(big.mark = ",")) %>%
+  kable_paper(full_width = F) %>%
+  collapse_rows(columns = 1, valign = "top") %>%
+  add_header_above(c( " " = 1, " " = 1, "Standardized Rank Regression Coefficients$^1$" = 5 ))%>%
+  pack_rows(index = c("Part 3: PDV 3%, future population and future income" = 24)) %>%
+  footnote(general = "PDV - present discounted value, CSR - climate-suiride realtionship, VSL - value of a statistical life", 
+           number = c("Standardized coefficients obtained from a regression of warming degree-, sex-, age group-, state-, and sampling iteration-specific PDV rank on ranks of the corresponding uncertainty and variability factors. The table reports averages over warming degree results.",
+                      "CSR sampling is represented by the Euclidean norm of the sampled regression coefficients from distributions in Table 1.",
+                      "For the binned CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for number of days in each temperature bin For linear temperature CSR, climate variability is represented by the standardized rank regression coefficient of average monthly temperature. For linear temperature with precipitation CSR, climate variability is represented by the Euclidean norm of the standardized rank regression coefficients for average monthly temperature and cumulative precipitation.")
+           ) 
+
+
+```
+
+
+
+
+# File references
+
+```{r file-references, echo=FALSE, warning=FALSE, message = FALSE, results='asis'}
+
+print(ITER_FILE_LIST)
+print(ITER_POP_FUTURE_FILE_LIST)
+print(ITER_POP_FUTURE_INC_FUTURE_FILE_LIST)
+
+```
