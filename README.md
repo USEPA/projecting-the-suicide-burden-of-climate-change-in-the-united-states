@@ -1,8 +1,10 @@
-Projecting the Suicide Burden of Climate Change in the United States
+#Projecting the Suicide Burden of Climate Change in the United States
 EPA Climate Change Division Climate Change Impacts and Risk Analysis (CIRA) Project (https://www.epa.gov/cira)
-Authors: Anna Belova1, Caitlin A. Gould2, Kate Munson3, Madison Howell4, Claire Trevisan6, Nicholas Obradovich5, Jeremy Martinich2
+Authors: Anna Belova(1), Caitlin A. Gould(2), Kate Munson(1), Madison Howell(1), Claire Trevisan(1), Nicholas Obradovich(3), Jeremy Martinich(2)
 
-1 – ICF, Pittsburgh, PA, United States 2 – Climate Change Division, U.S. Environmental Protection Agency, Washington, DC, 20460, United States 3 – ICF, Cambridge, MA, 02140, United States 4 – Hewlett Packard, Indianapolis, IN, 46234, United States 5 – Max Planck Institute for Human Development, Berlin, Germany 6 – ICF, Fairfax, VA, United States
+1 – ICF Inc., Fairfax, VA, United States 
+2 – Climate Change Division, U.S. Environmental Protection Agency, Washington, DC, 20460, United States 
+3 – Max Planck Institute for Human Development, Berlin, Germany 6 – ICF, Fairfax, VA, United States
 
 Address correspondence to: Caitlin A. Gould, gould.caitlin@epa.gov, WJC Building South Room 4226G 1200 Pennsylvania Ave NW, Washington, DC, 20460, United States
 
