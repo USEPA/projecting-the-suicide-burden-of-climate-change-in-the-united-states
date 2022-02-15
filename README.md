@@ -1,6 +1,3 @@
-# Projecting the suicide burden of climate change in the United States
-The R code for Projecting the Suicide Burden of Climate Change in the United States, as well as details on the R version and packages that should be helpful for results reproduction.
-
 Projecting the Suicide Burden of Climate Change in the United States
 EPA Climate Change Division Climate Change Impacts and Risk Analysis (CIRA) Project (https://www.epa.gov/cira)
 Authors: Anna Belova1, Caitlin A. Gould2, Kate Munson3, Madison Howell4, Claire Trevisan6, Nicholas Obradovich5, Jeremy Martinich2
@@ -172,15 +169,14 @@ PDV_MEAN : mean PDV over iterations
 PDV_UCB : 95th percentile of PDV over iterations
 value : value of the convergence test
 TEST : TRUE if converged / FALSE if did not converge
-
 Other files
-  ParSampleSet_100.csv: Sampled parameter values used in simulations (a set of 100)
-  results_SUMMARY_2021-1018.html: Journal paper tables
-  Pop2015.png: County-level population map
-  SIR100K.png: County-level baseline suicide incidence rate map
-  D1_cases.png, D3_cases.png: County-level excess suicide cases map (1C and 3C warming degree)
-  D1_inc.png, D3_inc.png: County-level excess suicide cases per 100K population map (1C and 3C warming degree)
-  D1_paf.png, D3_paf.png: County-level excess suicide cases as a share of baseline incidence map (1C and 3C warming degree)
-  D3_avgTemp_GCM.png: County-level map of average temperature for 3C warming degree projected by a GCM
-  D3_D80ge_GCM.png: County-level map of days above 80F for 3C warming degree projected by a GCM
-  D3_PREC_GCM.png: County-level map of precipitation for 3C warming degree projected by a GCM
+ParSampleSet_100.csv: Sampled parameter values used in simulations (a set of 100)
+results_SUMMARY_2021-1018.html: Journal paper tables
+Pop2015.png: County-level population map
+SIR100K.png: County-level baseline suicide incidence rate map
+D1_cases.png, D3_cases.png: County-level excess suicide cases map (1C and 3C warming degree)
+D1_inc.png, D3_inc.png: County-level excess suicide cases per 100K population map (1C and 3C warming degree)
+D1_paf.png, D3_paf.png: County-level excess suicide cases as a share of baseline incidence map (1C and 3C warming degree)
+D3_avgTemp_GCM.png: County-level map of average temperature for 3C warming degree projected by a GCM
+D3_D80ge_GCM.png: County-level map of days above 80F for 3C warming degree projected by a GCM
+D3_PREC_GCM.png: County-level map of precipitation for 3C warming degree projected by a GCM
