@@ -1,4 +1,4 @@
-# projecting-the-suicide-burden-of-climate-change-in-the-united-states
+# Projecting the suicide burden of climate change in the United States
 The R code for Projecting the Suicide Burden of Climate Change in the United States, as well as details on the R version and packages that should be helpful for results reproduction.
 
 Projecting the Suicide Burden of Climate Change in the United States
