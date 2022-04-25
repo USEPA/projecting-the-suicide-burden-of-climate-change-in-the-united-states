@@ -1,6 +1,6 @@
 # ICF - Anna Belova - October 2021
 # Mapping results for the manuscript
-
+# UPDATED - April 2022
 
 library(rgeos)
 library(raster)
@@ -8,6 +8,7 @@ library(tmap)
 library(tmaptools)
 library(maptools)
 library(tidyverse)
+library(RColorBrewer)
 
 DATA_DIR <- Sys.getenv("DATA_LOC")
 
@@ -37,6 +38,10 @@ res3 <- res3 %>%
 
 # Map cases ------ 
 
+pal <- brewer.pal(11,"RdBu")
+pal1 <- rev(pal[1:7]) 
+pal3 <- rev(pal[1:6]) 
+
 pd1 <- res1 %>% 
   group_by(FIPS,HIF,MODEL) %>% 
   summarize(value=sum(CASES_PT)) %>% 
@@ -57,15 +62,15 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(-Inf, 0, 0.02, 0.05, 0.1, 10, 100, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette =pal1, breaks = c(-Inf, 0, 0.02, 0.05, 0.1, 10, 100, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(a) Number of Excess Annual Suicides at 1°C", 
-            title.size = 1,
-            title.position = c("center", "top"), 
-            legend.text.size=0.8, aes.palette = list(seq = "-RdBu"))
+  tm_layout(main.title="(a) Number of Excess Annual Suicides at 1°C", 
+            main.title.size = 5,
+            main.title.position="center",
+            legend.text.size=3.5) 
 
-tmap_save(mm, file.path(DATA_DIR,"results/D1_cases.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D1_cases.png"), width=32, dpi=600)
 
 
 pd3 <- res3 %>% 
@@ -88,19 +93,24 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(0, 0.02, 0.05, 0.1, 10, 100, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal3,breaks = c(0, 0.02, 0.05, 0.1, 10, 100, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(b) Number of Excess Annual Suicides at 3°C",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title="(b) Number of Excess Annual Suicides at 3°C",
+            main.title.size = 5,
+            main.title.position="center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/D3_cases.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D3_cases.png"), width=32, dpi=600)
 
 
 # Map incidence ------ 
 
+
+pal <- brewer.pal(11,"RdBu")
+pal1 <- rev(pal[1:7]) 
+pal3 <- rev(pal[1:6]) 
+
 pd1 <- res1 %>% 
   group_by(FIPS,HIF,MODEL) %>% 
   summarize(cases=sum(CASES_PT), pop=sum(POP_SIZE)) %>% 
@@ -122,15 +132,15 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(-Inf, 0, 0.05, 0.1, 0.2, 0.3, 0.5, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette =  pal1 ,breaks = c(-Inf, 0, 0.05, 0.1, 0.2, 0.3, 0.5, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(c) Excess Annual Suicides per 100K at 1°C",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "-RdBu"))
+  tm_layout(main.title="(c) Excess Annual Suicides per 100K at 1°C",
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/D1_inc.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D1_inc.png"), width=32, dpi=600)
 
 
 pd3 <- res3 %>% 
@@ -154,19 +164,23 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(0, 0.05, 0.1, 0.2, 0.3, 0.5, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal3 ,breaks = c(0, 0.05, 0.1, 0.2, 0.3, 0.5, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(d) Excess Annual Suicides per 100K at 3°C", 
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title="(d) Excess Annual Suicides per 100K at 3°C", 
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/D3_inc.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D3_inc.png"), width=32, dpi=600)
 
 
 # Map PAF ------ 
 
+pal <- brewer.pal(11,"RdBu")
+pal1 <- rev(pal[1:7]) 
+pal3 <- rev(pal[1:6])
+
 pd1 <- res1 %>% 
   group_by(FIPS,HIF,MODEL) %>% 
   summarize(cases=sum(CASES_PT), inc=sum(IR100K * POP_SIZE / 100000 )) %>% 
@@ -188,15 +202,15 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(-Inf, 0, 0.5, 1, 2, 3, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal1 ,breaks = c(-Inf, 0, 0.25,  0.5, 1, 2, 3, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(e) Percent Change in Baseline Suicide Incidence at 1°C",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "-RdBu"))
+  tm_layout(main.title="(e) Percent Change in Baseline Suicide Incidence at 1°C",
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/D1_paf.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D1_paf.png"), width=32, dpi=600)
 
 
 pd3 <- res3 %>% 
@@ -220,18 +234,21 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(0, 0.5, 1, 2, 3, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette =  pal3 ,breaks = c(0,0.25, 0.5, 1, 2, 3, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(f) Percent Change in Baseline Suicide Incidence at 3°C",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title="(f) Percent Change in Baseline Suicide Incidence at 3°C",
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/D3_paf.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/D3_paf.png"), width=32, dpi=600)
 
 
 # Map climate by GCM ------ 
+
+pal <- brewer.pal(11,"RdBu")
+pal_mod <- rev(pal[1:6]) 
 
 MODEL_LIST <- res1 %>% distinct(MODEL) %>% pull(MODEL)
 
@@ -264,15 +281,15 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(0,  1, 2, 3, 4, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal_mod ,breaks = c(0,  1, 2, 3, 4, 5, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3),"°C)"),
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3),"°C)"),
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_avgTemp_",mod,".png")), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_avgTemp_",mod,".png")), width=32, dpi=600)
 
 }
 
@@ -306,15 +323,15 @@ for (mod in MODEL_LIST) {
   
   
   mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-    tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(0,  1, 4, 6, 8, Inf)) +
+    tm_polygons("values", border.col = "grey30", title="",palette = pal_mod,breaks = c(0,  1, 4, 6, 8, 10, Inf)) +
     tm_shape(US_states) +
     tm_borders(lwd=2, col = "black", alpha = .5) +
-    tm_layout(title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3)," days)"),
-              title.size = 1,
-              title.position = c("center", "top"),
-              legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+    tm_layout(main.title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3)," days)"),
+              main.title.size = 5,
+              main.title.position = "center",
+              legend.text.size=3.5)
   
-  tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_D80ge_",mod,".png")), width=8, dpi=600)
+  tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_D80ge_",mod,".png")), width=32, dpi=600)
   
 }
 
@@ -351,17 +368,21 @@ for (mod in MODEL_LIST) {
     tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(-Inf, -8, -3,  0, 3, 8, 20,  Inf)) +
     tm_shape(US_states) +
     tm_borders(lwd=2, col = "black", alpha = .5) +
-    tm_layout(title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3)," mm)"),
-              title.size = 1,
-              title.position = c("center", "top"),
-              legend.text.size=0.8, aes.palette = list(seq = "RdBu"))
+    tm_layout(main.title=paste0(mod, " (incidence-weighted increase of ",signif(avgVal,3)," mm)"),
+              main.title.size = 5,
+              main.title.position = "center",
+              legend.text.size=3.5, aes.palette = list(seq = "RdBu"))
   
-  tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_PREC_",mod,".png")), width=8, dpi=600)
+  tmap_save(mm, file.path(DATA_DIR,paste0("results/D3_PREC_",mod,".png")), width=32, dpi=600)
   
 }
 
 # Map population and age- and sex- standardized incidence rate -----
 
+
+pal <- brewer.pal(11,"RdBu")
+pal_pop <- rev(pal[1:6]) 
+pal_inc <- rev(pal[1:5])
 
 pd_p <- res1 %>% 
   group_by(FIPS,AGE,SEX) %>% 
@@ -383,15 +404,15 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c(100, 10000, 20000, 50000, 100000, 1000000, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal_pop,breaks = c(100, 10000, 20000, 50000, 100000, 1000000, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(a) Population Size",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title="(a) Population Size",
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5)
 
-tmap_save(mm, file.path(DATA_DIR,"results/Pop2015.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/Pop2015.png"), width=32, dpi=600)
 
 pd_distr <- res1 %>% 
   group_by(FIPS,AGE,SEX) %>% 
@@ -421,13 +442,13 @@ shp_pd[(shp_pd$FIPS=="51515"),"values"] <- val
 
 
 mm <- tm_shape(shp_pd, projection="+init=epsg:2163") +
-  tm_polygons("values", border.col = "grey30", title="",palette = "seq",breaks = c( 5, 14, 16, 18, 24, Inf)) +
+  tm_polygons("values", border.col = "grey30", title="",palette = pal_inc,breaks = c( 5, 14, 16, 18, 24, Inf)) +
   tm_shape(US_states) +
   tm_borders(lwd=2, col = "black", alpha = .5) +
-  tm_layout(title="(b) Standardized Suicide Rate per 100K",
-            title.size = 1,
-            title.position = c("center", "top"),
-            legend.text.size=0.8, aes.palette = list(seq = "Reds"))
+  tm_layout(main.title="(b) Standardized Suicide Rate per 100K",
+            main.title.size = 5,
+            main.title.position = "center",
+            legend.text.size=3.5 )
 
-tmap_save(mm, file.path(DATA_DIR,"results/SIR100K.png"), width=8, dpi=600)
+tmap_save(mm, file.path(DATA_DIR,"results/SIR100K.png"), width=32, dpi=600)
 
